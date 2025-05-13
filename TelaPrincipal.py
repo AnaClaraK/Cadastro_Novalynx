@@ -1,6 +1,6 @@
 import tkinter as tk
 import subprocess
-
+#FUNCIONA
 janela = tk.Tk()
 janela.title("Pagina Principal")
 janela.geometry("200x100")

@@ -1,5 +1,5 @@
 import tkinter as tk
-
+#NÃOFUNCIONA
 #criar função para add os itens na lista
 
 lista = []
