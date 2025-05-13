@@ -1,8 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
-#Usar o janelaaula
+
 lista_pessoas = []
 indice_editando = None  # Variável para rastrear o índice sendo editado
+janela_edicao = None    # Variável para referenciar a janela de edição
+entrada_edicao_toplevel = None # Variável para a entrada na janela de edição
 
 def adicionar_pessoa():
     pessoa = entrada.get()
@@ -27,26 +29,38 @@ def excluir_pessoa():
     except IndexError:
         messagebox.showerror("Erro", "Selecione uma pessoa para excluir.")
 
-def editar_pessoa():#N~sao fucniona
-    global indice_editando
+def abrir_janela_edicao():
+    global indice_editando, janela_edicao, entrada_edicao_toplevel
     try:
         indice_selecionado = lista_cadastro.curselection()[0]
         pessoa_selecionada = lista_cadastro.get(indice_selecionado).split("-", 1)[1].strip()
-        entrada_edicao.delete(0, tk.END)
-        entrada_edicao.insert(tk.END, pessoa_selecionada)
-        indice_editando = indice_selecionado  # Armazena o índice globalmente
+        indice_editando = indice_selecionado
+
+        janela_edicao = tk.Toplevel(janela)
+        janela_edicao.title("Editar Pessoa")
+
+        rotulo_edicao = tk.Label(janela_edicao, text="Editar Nome:", font=("Arial", 12))
+        rotulo_edicao.pack(pady=5)
+
+        entrada_edicao_toplevel = tk.Entry(janela_edicao, width=20, font=("Arial", 14))
+        entrada_edicao_toplevel.insert(tk.END, pessoa_selecionada)
+        entrada_edicao_toplevel.pack(pady=5)
+
+        botao_salvar_edicao_toplevel = tk.Button(janela_edicao, text="Salvar", command=salvar_edicao)
+        botao_salvar_edicao_toplevel.pack(pady=10)
+
     except IndexError:
         messagebox.showerror("Erro", "Selecione uma pessoa para editar.")
 
 def salvar_edicao():
-    global indice_editando
-    if indice_editando is not None:
-        nova_pessoa = entrada_edicao.get()
+    global indice_editando, janela_edicao, entrada_edicao_toplevel
+    if indice_editando is not None and janela_edicao and entrada_edicao_toplevel:
+        nova_pessoa = entrada_edicao_toplevel.get()
         if nova_pessoa:
             lista_pessoas[indice_editando] = nova_pessoa
             atualizar_listbox()
-            entrada_edicao.delete(0, tk.END)
-            indice_editando = None  # Limpa o índice de edição
+            janela_edicao.destroy() # Fecha a janela de edição
+            indice_editando = None
         else:
             messagebox.showerror("Erro", "O nome não pode estar vazio.")
     else:
@@ -77,7 +91,7 @@ lista_cadastro.pack(pady=10)
 btn_excluir = tk.Button(janela, text="Excluir Selecionado", command=excluir_pessoa)
 btn_excluir.pack(pady=5)
 
-btn_editar = tk.Button(janela, text="Editar Selecionado", command=editar_pessoa)
+btn_editar = tk.Button(janela, text="Editar Selecionado", command=abrir_janela_edicao)
 btn_editar.pack(pady=5)
 
 entrada_edicao = tk.Entry(janela, width=15, font=("Arial", 20))
