@@ -1,40 +1,58 @@
 import tkinter as tk
-#NÃOFUNCIONA
-#criar função para add os itens na lista
+import os
+from tkinter import messagebox
+
+arquivo_cadastros = "cadastros.txt"
 
 lista = []
-#Funções
+
 def atualizar_lista():
-    texto_lista = "\n" .join(f"{i}-{item}" for i, item in enumerate(lista)) if lista else "nenhum item adicionado" #posições
-    rotulo_lista.config(text=texto_lista)
+    lista_cadastros_listbox.delete(0, tk.END)
+    for i, item in enumerate(lista):
+        lista_cadastros_listbox.insert(tk.END, f"{i+1}- Nome: {item['nome']}, Email: {item['email']}")
+
+def salvar_cadastros():
+    try:
+        with open(arquivo_cadastros, "w") as arquivo:
+            for cadastro in lista:
+                arquivo.write(f"{cadastro['nome']},{cadastro['email']}\n")
+    except Exception as e:
+        messagebox.showerror("Erro ao salvar", f"Não foi possível salvar os cadastros: {e}")
+
+def carregar_cadastros():
+    global lista
+    lista = []
+    if os.path.exists(arquivo_cadastros):
+        try:
+            with open(arquivo_cadastros, "r") as arquivo:
+                for linha in arquivo:
+                    nome, email = linha.strip().split(",")
+                    lista.append({"nome": nome, "email": email})
+        except Exception as e:
+            messagebox.showerror("Erro ao carregar", f"Não foi possível carregar os cadastros: {e}")
+    atualizar_lista()
 
 def voltar_para_principal():
-    """Volta para a tela principal e esconde a tela atual."""
-    janela_atual = janela_cadastro if janela_cadastro.winfo_ismapped() else janela_visualizacao
-    janela_atual.withdraw()
-    janela_principal.deiconify()
+    janela.destroy()
 
 def excluir_cadastro():
-    """Exclui o cadastro selecionado."""
-    global lista_cadastros, indice_editando
+    global lista
     try:
         indice_selecionado = lista_cadastros_listbox.curselection()[0]
-        cadastro_selecionado = lista_cadastros[indice_selecionado]
+        cadastro_selecionado = lista[indice_selecionado]
         confirmacao = messagebox.askyesno("Confirmar Exclusão", f"Deseja excluir o cadastro de {cadastro_selecionado['nome']}?")
         if confirmacao:
-            del lista_cadastros[indice_selecionado]
-            atualizar_lista_cadastros()
-            if indice_editando == indice_selecionado:
-                indice_editando = None
+            del lista[indice_selecionado]
+            salvar_cadastros() 
+            atualizar_lista()
     except IndexError:
         messagebox.showerror("Erro", "Selecione um cadastro para excluir.")
 
 def editar_cadastro():
-    """Abre a tela de edição com os dados do cadastro selecionado."""
     global indice_editando, janela_edicao, entrada_nome_edicao, entrada_email_edicao
     try:
         indice_selecionado = lista_cadastros_listbox.curselection()[0]
-        cadastro_selecionado = lista_cadastros[indice_selecionado]
+        cadastro_selecionado = lista[indice_selecionado]
         indice_editando = indice_selecionado
 
         janela_edicao = tk.Toplevel(janela)
@@ -59,15 +77,21 @@ def editar_cadastro():
         messagebox.showerror("Erro", "Selecione um cadastro para editar.")
 
 def salvar_edicao():
-    """Salva as edições feitas no cadastro."""
-    global indice_editando, janela_edicao, entrada_nome_edicao, entrada_email_edicao
-    if indice_editando is not None and janela_edicao:
+    global indice_editando
+    try:
+        with open(arquivo_cadastros, "w") as arquivo:
+            for cadastro in lista:
+                arquivo.write(f"{cadastro['nome']},{cadastro['email']}\n")
+    except Exception as e:
+        messagebox.showerror("Erro ao salvar", f"Não foi possível salvar os cadastros: {e}")
+    if indice_editando is not None and hasattr(janela_edicao, 'destroy'):
         novo_nome = entrada_nome_edicao.get()
         novo_email = entrada_email_edicao.get()
         if novo_nome and novo_email:
-            lista_cadastros[indice_editando]['nome'] = novo_nome
-            lista_cadastros[indice_editando]['email'] = novo_email
-            atualizar_lista_cadastros()
+            lista[indice_editando]['nome'] = novo_nome
+            lista[indice_editando]['email'] = novo_email
+            salvar_cadastros() 
+            atualizar_lista()
             janela_edicao.destroy()
             indice_editando = None
             messagebox.showinfo("Sucesso", "Cadastro editado com sucesso!")
@@ -79,22 +103,23 @@ def salvar_edicao():
 janela = tk.Tk()
 janela.title("Cadastros Realizados")
 janela.geometry("400x500")
-janela.configure(bg="#aadfe6")
+janela.configure(bg="#cccccc")
 
-rotulo = tk.Label(janela, bg ="#aadfe6", text="Cadastro Realizados", font=("Forte", 20))
-rotulo.pack(pady=10)
+rotulo_lista = tk.Label(janela, bg="#cccccc", text="Cadastro Realizados", font=("Forte", 24))
+rotulo_lista.pack(pady=5)
 
-rotulo_lista = tk.Label(janela, text ="", width=20, height=20, anchor = "nw", font = ("Arial", 20), relief = "solid")
-rotulo_lista.pack(pady=10) 
-
-lista_cadastros_listbox = tk.Listbox(janela, width=50, height=15, font=("Arial", 12))
+lista_cadastros_listbox = tk.Listbox(janela, width=40, height=15, font=("Arial", 12))
 lista_cadastros_listbox.pack(pady=10)
 
-botao_excluir_cadastro = tk.Button(janela, text="Excluir Selecionado", command=excluir_cadastro)
-botao_excluir_cadastro.pack(pady=5)
-botao_editar_cadastro = tk.Button(janela, text="Editar Selecionado", command=editar_cadastro)
-botao_editar_cadastro.pack(pady=5)
-botao_voltar = tk.Button(janela, text="Voltar", command=voltar_para_principal)
-botao_voltar.pack(pady=5)
+btn_frame = tk.Frame(janela, bg="#cccccc")
+btn_frame.pack(pady=0)
 
+botao_excluir_cadastro = tk.Button(btn_frame, text="Excluir Selecionado", bg="#ff5252", width=15, height=2, command=excluir_cadastro)
+botao_excluir_cadastro.pack(pady=10, padx=5, side="left")
+botao_editar_cadastro = tk.Button(btn_frame, text="Editar Selecionado", bg="#6fff52", width=15, height=2, command=editar_cadastro)
+botao_editar_cadastro.pack(pady=10, padx=5, side="left")
+botao_voltar = tk.Button(btn_frame, text="Voltar", bg="#52ceff", width=15, height=2, command=voltar_para_principal)
+botao_voltar.pack(pady=10, padx=5, side="left")
+
+carregar_cadastros()
 janela.mainloop()
